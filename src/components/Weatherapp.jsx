@@ -22,6 +22,26 @@ function WeatherApp() {
   const [showForecast, setShowForecast] = useState(false);
 
   useEffect(() => {
+    if (weather) {
+      const fetchWeatherOnUnitChange = async () => {
+        try {
+          const { latitude, longitude } = weather.coord;
+          const { weatherData, forecastData } = await fetchWeatherData({
+            latitude,
+            longitude,
+            isCelsius,
+          });
+          setWeather(weatherData);
+          setForecast(forecastData);
+        } catch (err) {
+          setError("Fehler beim Abrufen der Wetterdaten.");
+        }
+      };
+      fetchWeatherOnUnitChange();
+    }
+  }, [isCelsius]); 
+
+  useEffect(() => {
     if (!isLocationRequested) {
       const askForLocation = async () => {
         const allowLocation = window.confirm(
