@@ -24,6 +24,8 @@ function WeatherApp() {
   useEffect(() => {
     if (weather && weather.coord) {
       const fetchWeatherOnUnitChange = async () => {
+        console.log("irgendwas");
+        
         try {
           const { latitude, longitude } = weather.coord;
           const { weatherData, forecastData } = await fetchWeatherData({
