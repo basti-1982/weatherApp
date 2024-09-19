@@ -22,7 +22,7 @@ function WeatherApp() {
   const [showForecast, setShowForecast] = useState(false);
 
   useEffect(() => {
-    if (weather) {
+    if (weather && weather.coord) {
       const fetchWeatherOnUnitChange = async () => {
         try {
           const { latitude, longitude } = weather.coord;
@@ -39,7 +39,7 @@ function WeatherApp() {
       };
       fetchWeatherOnUnitChange();
     }
-  }, [isCelsius]); 
+  }, [isCelsius, weather]); 
 
   useEffect(() => {
     if (!isLocationRequested) {
