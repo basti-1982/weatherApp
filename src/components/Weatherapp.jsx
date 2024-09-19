@@ -35,11 +35,12 @@ function WeatherApp() {
           setForecast(forecastData);
         } catch (err) {
           setError("Fehler beim Abrufen der Wetterdaten.");
+          console.error(err);
         }
       };
       fetchWeatherOnUnitChange();
     }
-  }, [isCelsius, weather]); 
+  }, [isCelsius, weather]);
 
   useEffect(() => {
     if (!isLocationRequested) {
@@ -50,6 +51,8 @@ function WeatherApp() {
         if (allowLocation) {
           requestLocation();
           setIsLocationRequested(true);
+        } else {
+          setError("Standortzugriff wurde verweigert. Bitte geben Sie eine Stadt manuell ein.");
         }
       };
       askForLocation();
@@ -73,14 +76,15 @@ function WeatherApp() {
             setError(null);
           } catch (err) {
             setError("Fehler beim Abrufen der Wetterdaten.");
+            console.error(err);
           }
         },
         () => {
-          setError("Standortzugriff verweigert. Bitte Stadt manuell eingeben.");
+          setError("Standortzugriff verweigert. Bitte geben Sie eine Stadt manuell ein.");
         }
       );
     } else {
-      setError("Geolocation wird von Ihrem Browser nicht unterstützt.");
+      setError("Geolocation wird von Ihrem Browser nicht unterstützt. Bitte geben Sie eine Stadt manuell ein.");
     }
   };
 
@@ -97,13 +101,13 @@ function WeatherApp() {
         setShowForecast(false);
         setError(null);
       } catch (err) {
-        setError("Wetterdaten konnten nicht abgerufen werden.");
+        setError(`Wetterdaten konnten nicht abgerufen werden: ${err.message}`);
+        console.error(err);
       }
     } else {
       setError("Bitte geben Sie eine gültige Stadt ein.");
     }
   };
-
   const toggleTemperatureUnit = () => setIsCelsius(!isCelsius);
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
   const handleForecastChange = (e) => {
