@@ -1,9 +1,14 @@
 function Forecast({ forecast, forecastDays, isCelsius, getFilteredForecast }) {
+  const filteredForecast = getFilteredForecast(forecast, forecastDays);
+
+  const temperature = (temp) => 
+    Math.round(isCelsius ? temp : temp * 9 / 5 + 32);
+
   return (
     <div className="forecast">
       <h3>Vorhersage für die nächsten {forecastDays} Tage</h3>
       <div className="forecast-items">
-        {getFilteredForecast(forecast, forecastDays).map((day, index) => (
+        {filteredForecast.map((day, index) => (
           <div key={index} className="forecast-item">
             <p>{day.formattedDate}</p>
             <img
@@ -11,7 +16,8 @@ function Forecast({ forecast, forecastDays, isCelsius, getFilteredForecast }) {
               alt={day.weather[0].description}
             />
             <p>
-              {day.main.temp}°{isCelsius ? "C" : "F"}
+              {temperature(day.main.temp)}
+              °{isCelsius ? "C" : "F"}
             </p>
             <p>{day.weather[0].description}</p>
           </div>

@@ -18,50 +18,22 @@ function WeatherApp() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isCelsius, setIsCelsius] = useState(true);
   const [forecastDays, setForecastDays] = useState("");
-  const [isLocationRequested, setIsLocationRequested] = useState(false);
   const [showForecast, setShowForecast] = useState(false);
 
   useEffect(() => {
-    if (weather && weather.coord) {
-      const fetchWeatherOnUnitChange = async () => {
-        console.log("irgendwas");
-        
-        try {
-          const { latitude, longitude } = weather.coord;
-          const { weatherData, forecastData } = await fetchWeatherData({
-            latitude,
-            longitude,
-            isCelsius,
-          });
-          setWeather(weatherData);
-          setForecast(forecastData);
-        } catch (err) {
-          setError("Fehler beim Abrufen der Wetterdaten.");
-          console.error(err);
-        }
-      };
-      fetchWeatherOnUnitChange();
+    const allowLocation = window.confirm(
+      "Möchten Sie Ihren Standort teilen, um das Wetter in Ihrer Region zu sehen?"
+    );
+    if (allowLocation) {
+      loadWeatherCurrendLocation();
+    } else {
+      setError(
+        "Standortzugriff wurde verweigert. Bitte geben Sie eine Stadt manuell ein."
+      );
     }
-  }, [isCelsius, weather]);
+  }, []);
 
-  useEffect(() => {
-    if (!isLocationRequested) {
-      const askForLocation = async () => {
-        const allowLocation = window.confirm(
-          "Möchten Sie Ihren Standort teilen, um das Wetter in Ihrer Region zu sehen?"
-        );
-        if (allowLocation) {
-          requestLocation();
-          setIsLocationRequested(true);
-        } else {
-          setError("Standortzugriff wurde verweigert. Bitte geben Sie eine Stadt manuell ein.");
-        }
-      };
-      askForLocation();
-    }
-  }, [isLocationRequested]);
-
-  const requestLocation = () => {
+  const loadWeatherCurrendLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -82,11 +54,15 @@ function WeatherApp() {
           }
         },
         () => {
-          setError("Standortzugriff verweigert. Bitte geben Sie eine Stadt manuell ein.");
+          setError(
+            "Standortzugriff verweigert. Bitte geben Sie eine Stadt manuell ein."
+          );
         }
       );
     } else {
-      setError("Geolocation wird von Ihrem Browser nicht unterstützt. Bitte geben Sie eine Stadt manuell ein.");
+      setError(
+        "Geolocation wird von Ihrem Browser nicht unterstützt. Bitte geben Sie eine Stadt manuell ein."
+      );
     }
   };
 
