@@ -1,59 +1,139 @@
-import { useState } from 'react';
+import { useState, useEffect } from "react";
+import { DateTime } from "luxon";
+import "../styles/WeatherApp.css";
+import "../styles/Header.css";
+import Header from "./Header";
+import { getFilteredForecast } from "./FilteredForecast";
+import { fetchWeatherData } from "./fetchWeatherData";
+import WeatherInfo from "./WeatherInfo";
+import Forecast from "./Forecast";
+import CityForm from "./CityForm";
+import ForecastControls from "./ForecastControls";
 
 function WeatherApp() {
-  const [city, setCity] = useState('');
+  const [city, setCity] = useState("");
   const [weather, setWeather] = useState(null);
+  const [forecast, setForecast] = useState(null);
   const [error, setError] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isCelsius, setIsCelsius] = useState(true);
+  const [forecastDays, setForecastDays] = useState("");
+  const [isLocationRequested, setIsLocationRequested] = useState(false);
+  const [showForecast, setShowForecast] = useState(false);
 
-  const API_KEY = '0d5f1967bbd43bfaa95a75cb5ca799cd';
+  useEffect(() => {
+    if (!isLocationRequested) {
+      const askForLocation = async () => {
+        const allowLocation = window.confirm(
+          "Möchten Sie Ihren Standort teilen, um das Wetter in Ihrer Region zu sehen?"
+        );
+        if (allowLocation) {
+          requestLocation();
+          setIsLocationRequested(true);
+        }
+      };
+      askForLocation();
+    }
+  }, [isLocationRequested]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setWeather(null);
-
-    try {
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric&lang=de`
+  const requestLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          try {
+            const { weatherData, forecastData } = await fetchWeatherData({
+              latitude,
+              longitude,
+              isCelsius,
+            });
+            setWeather(weatherData);
+            setForecast(forecastData);
+            setShowForecast(false);
+            setError(null);
+          } catch (err) {
+            setError("Fehler beim Abrufen der Wetterdaten.");
+          }
+        },
+        () => {
+          setError("Standortzugriff verweigert. Bitte Stadt manuell eingeben.");
+        }
       );
-      
-      if (!response.ok) {
-        throw new Error('Stadt nicht gefunden');
-      }
-
-      const data = await response.json();
-      setWeather(data);
-    } catch (err) {
-      setError('Stadt nicht Gefunden, versuche es noch einmal.');
+    } else {
+      setError("Geolocation wird von Ihrem Browser nicht unterstützt.");
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (city.trim() !== "") {
+      try {
+        const { weatherData, forecastData } = await fetchWeatherData({
+          cityName: city,
+          isCelsius,
+        });
+        setWeather(weatherData);
+        setForecast(forecastData);
+        setShowForecast(false);
+        setError(null);
+      } catch (err) {
+        setError("Wetterdaten konnten nicht abgerufen werden.");
+      }
+    } else {
+      setError("Bitte geben Sie eine gültige Stadt ein.");
+    }
+  };
+
+  const toggleTemperatureUnit = () => setIsCelsius(!isCelsius);
+  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+  const handleForecastChange = (e) => {
+    setForecastDays(Number(e.target.value));
+    setShowForecast(true);
+  };
+
+  const weatherClass = weather?.weather[0]?.main.toLowerCase() || "";
+
+  const getLocalTime = (timezoneOffset) => {
+    const offsetHours = timezoneOffset / 3600;
+    return DateTime.utc()
+      .plus({ hours: offsetHours })
+      .toLocaleString(DateTime.DATETIME_MED);
+  };
+
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
-      <h1>Wetter App</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          placeholder="Gibt hier deine Stadt ein"
-          style={{ padding: '10px', width: '200px' }}
-        />
-        <button type="submit" style={{ padding: '10px', marginLeft: '10px' }}>
-          Drück mich für das Wetter
-        </button>
-      </form>
-
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
+    <div
+      className={`weather-container ${
+        isDarkMode ? "dark-mode" : ""
+      } ${weatherClass}`}>
+      <Header
+        toggleDarkMode={toggleDarkMode}
+        toggleTemperatureUnit={toggleTemperatureUnit}
+        isDarkMode={isDarkMode}
+        isCelsius={isCelsius}
+      />
+      <h1 className="app-title">Wetter App</h1>
+      <CityForm city={city} setCity={setCity} handleSubmit={handleSubmit} />
+      {error && <p>{error}</p>}
       {weather && (
-        <div style={{ marginTop: '20px' }}>
-          <h2>Wetter in {weather.name}</h2>
-          <p>Temperatur: {weather.main.temp}°C</p>
-          <p>Wetter: {weather.weather[0].description}</p>
-          <p>Luftfeuchtigkeit: {weather.main.humidity}%</p>
-          <p>Wind Geschwindigkeit: {weather.wind.speed} m/s</p>
-        </div>
+        <WeatherInfo
+          weather={weather}
+          isCelsius={isCelsius}
+          getLocalTime={getLocalTime}
+        />
+      )}
+      {weather && (
+        <ForecastControls
+          forecastDays={forecastDays}
+          handleForecastChange={handleForecastChange}
+        />
+      )}
+      {showForecast && forecast && forecastDays && (
+        <Forecast
+          forecast={forecast}
+          forecastDays={forecastDays}
+          isCelsius={isCelsius}
+          getFilteredForecast={getFilteredForecast}
+        />
       )}
     </div>
   );
