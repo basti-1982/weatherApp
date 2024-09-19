@@ -1,41 +1,59 @@
-import { API_KEY } from "../config"; 
+// import { API_KEY } from "../config"; 
+
+// export const fetchWeatherData = async ({ latitude, longitude, cityName, isCelsius }) => {
+//     const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?${cityName ? `q=${cityName}` : `lat=${latitude}&lon=${longitude}`}&appid=${API_KEY}&units=${isCelsius ? 'metric' : 'imperial'}&lang=de`;
+    
+//     const weatherResponse = await fetch(weatherUrl);
+//     if (!weatherResponse.ok) {
+//       throw new Error(`Weather API request failed with status ${weatherResponse.status}`);
+//     }
+//     const weatherData = await weatherResponse.json();
+  
+//     const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?${cityName ? `q=${cityName}` : `lat=${latitude}&lon=${longitude}`}&appid=${API_KEY}&units=${isCelsius ? 'metric' : 'imperial'}&lang=de`;
+  
+//     const forecastResponse = await fetch(forecastUrl);
+//     if (!forecastResponse.ok) {
+//       throw new Error(`Forecast API request failed with status ${forecastResponse.status}`);
+//     }
+//     const forecastData = await forecastResponse.json();
+  
+//     return { weatherData, forecastData };
+//   };
+  
+
+import { API_KEY } from "../config";
 
 export const fetchWeatherData = async ({ latitude, longitude, cityName, isCelsius }) => {
-    // Validierung der Koordinaten
-    if (latitude && (latitude < -90 || latitude > 90)) {
-        throw new Error("Invalid latitude value");
-    }
-    if (longitude && (longitude < -180 || longitude > 180)) {
-        throw new Error("Invalid longitude value");
+  try {
+    // Überprüfe, ob die Koordinaten oder der Stadtnamen vorhanden sind
+    if (!latitude || !longitude) {
+      if (!cityName) {
+        throw new Error("Weder Standortkoordinaten noch Stadtname vorhanden.");
+      }
     }
 
-    // Weather API URL
-    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?${cityName ? `q=${cityName}` : `lat=${latitude}&lon=${longitude}`}&appid=${API_KEY}&units=${isCelsius ? 'metric' : 'imperial'}&lang=de`;
-    
-    // Log URL for debugging
-    console.log("Weather URL:", weatherUrl);
-    
-    // Fetch weather data
+    // Erstelle die URLs für Wetter und Vorhersage
+    const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?${cityName ? `q=${cityName}` : `lat=${latitude}&lon=${longitude}`}&appid=${API_KEY}&units=${isCelsius ? "metric" : "imperial"}&lang=de`;
+
     const weatherResponse = await fetch(weatherUrl);
     if (!weatherResponse.ok) {
-      const error = await weatherResponse.json();
-      throw new Error(`Weather API request failed: ${error.message}`);
+      throw new Error(`Weather API request failed with status ${weatherResponse.status}`);
     }
+
     const weatherData = await weatherResponse.json();
-  
-    // Forecast API URL
-    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?${cityName ? `q=${cityName}` : `lat=${latitude}&lon=${longitude}`}&appid=${API_KEY}&units=${isCelsius ? 'metric' : 'imperial'}&lang=de`;
-    
-    // Log URL for debugging
-    console.log("Forecast URL:", forecastUrl);
-    
-    // Fetch forecast data
+
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?${cityName ? `q=${cityName}` : `lat=${latitude}&lon=${longitude}`}&appid=${API_KEY}&units=${isCelsius ? "metric" : "imperial"}&lang=de`;
+
     const forecastResponse = await fetch(forecastUrl);
     if (!forecastResponse.ok) {
-      const error = await forecastResponse.json();
-      throw new Error(`Forecast API request failed: ${error.message}`);
+      throw new Error(`Forecast API request failed with status ${forecastResponse.status}`);
     }
+
     const forecastData = await forecastResponse.json();
-  
+
     return { weatherData, forecastData };
+  } catch (error) {
+    console.error("Fehler beim Abrufen der Wetterdaten:", error);
+    throw error;
+  }
 };
